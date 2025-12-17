@@ -5,8 +5,8 @@ resource "aws_organizations_organizational_unit" "this" {
 
 resource "null_resource" "enable_control_tower_baseline" {
   provisioner "local-exec" {
-    command = <<EOT
-#!/bin/bash
+    interpreter = ["bash", "-c"]
+    command     = <<EOT
 set -euo pipefail
 
 REGION="${var.control_tower_region}"
