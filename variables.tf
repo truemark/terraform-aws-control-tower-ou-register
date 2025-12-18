@@ -19,6 +19,18 @@ variable "control_tower_baseline_version" {
   default     = "4.0"
 }
 
+variable "baseline_arn" {
+  description = "ARN of the AWS Control Tower baseline. If not provided, will be constructed as arn:aws:controltower:{region}::baseline/AWSControlTowerBaseline"
+  type        = string
+  default     = null
+}
+
+variable "identity_center_baseline_arn" {
+  description = "ARN of an enabled Identity Center baseline (if applicable). This is the enabledBaseline ARN, not the baseline ARN."
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags to apply to the Control Tower baseline"
   type        = map(string)

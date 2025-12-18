@@ -57,6 +57,8 @@ locals {
 | `parent_id`                  | ID of the parent OU or Root (e.g., `r-xxxx`)                  | string       | —       | ✅ Yes   |
 | `control_tower_region`       | Region where Control Tower is deployed (e.g., `us-east-1`)    | string       | —       | ✅ Yes   |
 | `control_tower_baseline_version` | Version of AWSControlTowerBaseline to enable             | string       | `"4.0"` | ❌ No    |
+| `baseline_arn`               | ARN of the AWS Control Tower baseline (auto-constructed if not provided) | string | `null` | ❌ No |
+| `identity_center_baseline_arn` | ARN of an enabled Identity Center baseline (enabledBaseline ARN) | string | `null` | ❌ No |
 | `tags`                       | Tags to apply to the Control Tower baseline                   | map(string)  | `{}`    | ❌ No    |
 
 ---
@@ -77,8 +79,8 @@ locals {
 ## Behavior
 
 - **Native Terraform Resource:** Uses `aws_controltower_baseline` resource for full Terraform state management
-- **Automatic Discovery:** Dynamically discovers Control Tower baseline ARNs using data sources
-- **Identity Center Integration:** Automatically detects and links Identity Center baseline if enabled
+- **Baseline ARN Construction:** Automatically constructs the Control Tower baseline ARN based on the region (can be overridden)
+- **Identity Center Integration:** Optionally links to Identity Center baseline if the enabled baseline ARN is provided
 - **Built-in Timeouts:** Default 30-minute timeout for create/update/delete operations
 - **Idempotent:** Safe to re-apply without side effects
 
