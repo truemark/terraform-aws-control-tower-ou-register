@@ -18,3 +18,9 @@ variable "control_tower_baseline_version" {
   type        = string
   default     = "4.0"
 }
+
+variable "tags" {
+  description = "Tags to apply to the Control Tower baseline"
+  type        = map(string)
+  default     = {}
+}
