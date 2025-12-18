@@ -20,13 +20,15 @@ The module uses Terraform's native Control Tower resources for idempotent, relia
 
 ### Basic Usage
 
+The module will automatically discover the Control Tower baseline ARN using AWS CLI:
+
 ```hcl
 module "sandbox_ou" {
   source                         = "./modules/controltower_ou"
 
   name                           = "Sandbox"
   parent_id                      = "r-abc123"                   # Root or parent OU ID
-  control_tower_region           = "us-east-1"                  # Region where Control Tower is deployed
+  control_tower_region           = "us-east-2"                  # Region where Control Tower is deployed
   control_tower_baseline_version = "4.0"                        # Optional version override
 }
 ```
@@ -38,13 +40,32 @@ module "sandbox_ou" {
   source               = "./modules/controltower_ou"
   name                 = "Sandbox"
   parent_id            = "ou-xxxx-xxxxxxxx"
-  control_tower_region = "us-east-1"
+  control_tower_region = "us-east-2"
 }
 
 # Access account IDs from the created OU
 locals {
   sandbox_account_ids = concat(module.sandbox_ou.ou_accounts[*].id)
 }
+```
+
+### Advanced: Manually Specify Baseline ARN
+
+If you prefer to specify the baseline ARN manually (or to avoid AWS CLI dependencies):
+
+```hcl
+module "sandbox_ou" {
+  source               = "./modules/controltower_ou"
+  name                 = "Sandbox"
+  parent_id            = "r-abc123"
+  control_tower_region = "us-east-2"
+  baseline_arn         = "arn:aws:controltower:us-east-2::baseline/17BSJV3IGJ2QSGA2"
+}
+```
+
+To find your baseline ARN:
+```bash
+aws controltower list-baselines --region us-east-2 | jq -r '.baselines[] | select(.name=="AWSControlTowerBaseline") | .arn'
 ```
 
 ---
@@ -109,10 +130,11 @@ Use this module to dynamically register any new OU as part of your AWS account p
 
 ## Notes
 
-- **No external dependencies:** No longer requires AWS CLI or `jq`
+- **AWS CLI & jq required:** The module uses AWS CLI to automatically discover baseline ARNs (unless you provide `baseline_arn` manually)
 - Uses native Terraform AWS provider resources (requires AWS provider >= 6.0)
 - Fully manages baseline lifecycle through Terraform state
 - Only registers `AWSControlTowerBaseline`. Additional baseline support may be added as needed.
+- Automatically detects and links Identity Center baseline if already enabled
 
 ---
 
