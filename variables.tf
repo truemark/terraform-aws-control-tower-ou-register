@@ -20,7 +20,7 @@ variable "control_tower_baseline_version" {
 }
 
 variable "baseline_arn" {
-  description = "ARN of the AWS Control Tower baseline. If not provided, will be constructed as arn:aws:controltower:{region}::baseline/AWSControlTowerBaseline"
+  description = "ARN of the AWS Control Tower baseline. If not provided, will be automatically discovered using AWS CLI."
   type        = string
   default     = null
 }
