@@ -10,10 +10,47 @@ data "external" "baselines" {
 
   program = ["bash", "-c", <<-EOT
     set -e
-    BASELINE_INFO=$(aws controltower list-baselines --region ${var.control_tower_region})
+
+    # Function to retry AWS CLI commands with exponential backoff
+    retry_with_backoff() {
+      local max_attempts=5
+      local timeout=1
+      local attempt=1
+      local exitCode=0
+
+      while [ $attempt -le $max_attempts ]; do
+        if output=$("$@" 2>&1); then
+          echo "$output"
+          return 0
+        else
+          exitCode=$?
+          if echo "$output" | grep -q "ThrottlingException\|TooManyRequestsException\|Too Many Requests"; then
+            if [ $attempt -lt $max_attempts ]; then
+              echo "Throttling detected. Retrying in $timeout seconds... (attempt $attempt/$max_attempts)" >&2
+              sleep $timeout
+              timeout=$((timeout * 2))
+              attempt=$((attempt + 1))
+            else
+              echo "Max retry attempts reached. Last error: $output" >&2
+              return $exitCode
+            fi
+          else
+            echo "$output" >&2
+            return $exitCode
+          fi
+        fi
+      done
+    }
+
+    # Get baseline information with retry logic
+    BASELINE_INFO=$(retry_with_backoff aws controltower list-baselines --region ${var.control_tower_region})
     CT_BASELINE_ARN=$(echo "$BASELINE_INFO" | jq -r '.baselines[] | select(.name=="AWSControlTowerBaseline") | .arn')
 
-    ENABLED_BASELINE_INFO=$(aws controltower list-enabled-baselines --region ${var.control_tower_region})
+    # Add delay between API calls to avoid rate limiting
+    sleep 2
+
+    # Get enabled baseline information with retry logic
+    ENABLED_BASELINE_INFO=$(retry_with_backoff aws controltower list-enabled-baselines --region ${var.control_tower_region})
     IDENTITY_CENTER_BASELINE_ARN=$(echo "$BASELINE_INFO" | jq -r '.baselines[] | select(.name=="IdentityCenterBaseline") | .arn')
     ENABLED_IDENTITY_CENTER_ARN=$(echo "$ENABLED_BASELINE_INFO" | jq -r --arg b "$IDENTITY_CENTER_BASELINE_ARN" '.enabledBaselines[] | select(.baselineIdentifier==$b) | .arn // empty')
 
